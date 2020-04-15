@@ -42,8 +42,12 @@ THIRD_PARTY_APPS = []
 
 PROJECT_APPS = [
     "core.apps.CoreConfig",
-    "users.apps.UsersConfig",
+    "conversations.apps.ConversationsConfig",
+    "lists.apps.ListsConfig",
+    "reservations.apps.ReservationsConfig",
+    "reviews.apps.ReviewsConfig",
     "rooms.apps.RoomsConfig",
+    "users.apps.UsersConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS
