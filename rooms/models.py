@@ -86,6 +86,11 @@ class Room(core_models.TimeStampedModel):
     facilities = models.ManyToManyField(Facility, related_name="rooms", blank=True)
     house_rules = models.ManyToManyField(HouseRule, related_name="rooms", blank=True)
 
+    def save(self, *args, **kwargs):
+        """ do something """
+        self.city = str.capitalize(self.city)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.name
 
@@ -102,3 +107,4 @@ class Room(core_models.TimeStampedModel):
 
     def count_photos(self):
         return self.photos.count()
+

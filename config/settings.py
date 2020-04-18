@@ -128,6 +128,6 @@ STATIC_URL = "/static/"
 
 AUTH_USER_MODEL = "users.User"
 
-MEDIA_ROOT = os.path.join(BASE_DIR, "uploads")
+MEDIA_ROOT = os.path.join(BASE_DIR, "uploads")  # 실제 저장되는 경로
 
-MEDIA_URL = "/media/"
+MEDIA_URL = "/media/"  # django app상의 url 주소가 된다.
