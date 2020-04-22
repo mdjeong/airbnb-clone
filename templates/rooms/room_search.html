@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block page_title %}
+    Search
+{% endblock page_title %}
+
+{% block search_bar %}
+{% endblock search_bar %}
+
+{% block content %}
+<h2>Search!</h2>
+<form method="get" action="{% url 'rooms:search' %}">
+  {{form.as_p}}
+  <button>Search</button>
+</form>
+
+<h3> :: Results ::  </h3>
+<h4> 총 {{rooms.paginator.count}} 숙소가 검색되었습니다.</h4>
+<h4>
+  <ol>
+  {% for room in rooms  %}
+      <li>{{room.name}}: {{room.address}}</li>
+  {% endfor %}
+  </ol>
+  {% if rooms.has_previous %}
+        <a href="?{{request.GET.urlencode}}&page=1">&laquo; first</a>
+        <a href="?{{request.GET.urlencode}}&page={{rooms.previous_page_number}}">Previous</a>
+    {% endif %}
+        Page {{rooms.number}} of {{rooms.paginator.num_pages}}
+    {% if  rooms.has_next %}
+        <a href="?{{request.GET.urlencode}}&page={{rooms.next_page_number}}">Next</a>
+        <a href="?{{request.GET.urlencode}}&page={{ rooms.paginator.num_pages }}">last &raquo;</a>
+    {% endif %}
+</h4>
+
+
+
+{% endblock content %}
