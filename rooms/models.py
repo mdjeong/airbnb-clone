@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 from django_countries.fields import CountryField
 from core import models as core_models
 from users import models as user_models
@@ -108,3 +109,5 @@ class Room(core_models.TimeStampedModel):
     def count_photos(self):
         return self.photos.count()
 
+    def get_absolute_url(self):
+        return reverse("rooms:detail", kwargs={"pk": self.pk})
