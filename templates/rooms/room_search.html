@@ -15,7 +15,7 @@
 </form>
 
 <h3> :: Results ::  </h3>
-<h4> 총 {{rooms.paginator.count}} 숙소가 검색되었습니다.</h4>
+<h4> 총 {{rooms.paginator.count}}개의 숙소가 검색되었습니다.</h4>
 <h4>
   <ol>
   {% for room in rooms  %}
@@ -32,7 +32,4 @@
         <a href="?{{request.GET.urlencode}}&page={{ rooms.paginator.num_pages }}">last &raquo;</a>
     {% endif %}
 </h4>
-
-
-
 {% endblock content %}
