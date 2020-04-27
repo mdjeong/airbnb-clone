@@ -5,6 +5,7 @@ from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import FormView
 from django.contrib.auth import authenticate, login, logout
+from django.contrib import messages
 from . import forms, models
 
 
@@ -100,16 +101,16 @@ def github_callback(request):
         client_id = os.environ.get("GH_ID")
         client_secret = os.environ.get("GH_SECRET")
         if code is not None:
-            result = requests.post(
+            token_request = requests.post(
                 f"https://github.com/login/oauth/access_token?client_id={client_id}&client_secret={client_secret}&code={code}",
                 headers={"Accept": "application/json"},
             )
-            result_json = result.json()
-            error = result_json.get("error", None)
+            token_json = token_request.json()
+            error = token_json.get("error", None)
             if error is not None:
-                raise GithubException()
+                raise GithubException("Can't get access token from github")
             else:
-                access_token = result_json.get("access_token")
+                access_token = token_json.get("access_token")
                 profile_request = requests.get(
                     "https://api.github.com/user",
                     headers={
@@ -125,8 +126,12 @@ def github_callback(request):
                     bio = profile_json.get("bio")
                     try:
                         user = models.User.objects.get(email=email)
-                        if user.login_method != models.User.LOGIN_GITHUB:
-                            raise GithubException()
+                        if user.login_method == models.User.LOGIN_GITHUB:
+                            login(request, user)
+                        else:
+                            raise GithubException(
+                                f"Please, Login with {user.login_method}"
+                            )
                     except models.User.DoesNotExist:
                         user = models.User.objects.create(
                             email=email,
@@ -142,6 +147,53 @@ def github_callback(request):
                 else:
                     raise GithubException()
         else:
-            raise GithubException()
-    except GithubException:
-        return redirect(reverse("users:log_in"))
+            raise GithubException("Can't get code for token from github.com")
+    except GithubException as e:
+        messages.error(request, e)
+        print(e)
+        return redirect(reverse("users:login"))
+
+
+class KakaoException(Exception):
+    pass
+
+
+def kakao_login(request):
+    app_key = os.environ.get("KAKAO_KEY")
+    redirect_uri = "http://127.0.0.1:8000/users/log_in/kakao/callback"
+    return redirect(
+        f"https://kauth.kakao.com/oauth/authorize?client_id={app_key}&redirect_uri={redirect_uri}&response_type=code"
+    )
+
+
+def kakao_callback(request):
+    try:
+        code = request.GET.get("code", None)
+        app_key = os.environ.get("KAKAO_KEY")
+        redirect_uri = "http://127.0.0.1:8000/users/log_in/kakao/callback"
+        if code is not None:
+            print(f"success to receive the code: {code}")
+            token_request = requests.get(
+                f"https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id={app_key}&redirect_uri={redirect_uri}&code={code}",
+            )
+            token_json = token_request.json()
+            error = token_json.get("error", None)
+            if error is not None:
+                raise KakaoException("Can't Get access token from kakao")
+
+            access_token = token_json.get("access_token")
+            print(f"success to receive the access token: {access_token}")
+            profile_request = requests.get(
+                f"https://kapi.kakao.com/v2/user/me?",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            profile_json = profile_request.json()
+            print(profile_json)
+            email = profile_json.get("kakako_account.email")
+        else:
+            raise KakaoException("Can't Get Authorized Code from Kakao Login")
+        return redirect(reverse("users:login"))
+    except KakaoException as e:
+        messages.error(request, e)
+        print(e)
+        return redirect(reverse("users:login"))
