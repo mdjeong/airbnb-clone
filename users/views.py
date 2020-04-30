@@ -190,6 +190,29 @@ def kakao_callback(request):
             profile_json = profile_request.json()
             print(profile_json)
             email = profile_json.get("kakako_account.email")
+            if email is None:
+                raise KakaoException()
+            properties = profile_json.get("properties")
+            nickname = properties.get("nickname")
+            profile_image = properties.get("profile_image")
+            try:
+                user = models.User.objects.get(email=email)
+                if user.login_method != models.User.LOGIN_KAKAO:
+                    raise KakaoException
+                user.avatar = profile_image
+                user.save()
+            except models.User.DoesNotExist:
+                user = models.User.objects.create(
+                    email=email,
+                    first_name=nickname,
+                    login_method=models.User.LOGIN_KAKAO,
+                    email_verified=True,
+                    avatar=profile_image,
+                )
+                user.set_unusable_password()
+                user.save()
+            login(request, user)
+
         else:
             raise KakaoException("Can't Get Authorized Code from Kakao Login")
         return redirect(reverse("users:login"))
