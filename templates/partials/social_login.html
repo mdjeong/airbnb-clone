@@ -1,8 +1,14 @@
 <div>
     <a href="{% url 'users:github-login' %}">
-        Continue with Github
+        Continue with Github Login
     </a>
     <a href="{% url 'users:kakao-login' %}">
         Continue with Kakao Login
+    </a>
+    {% comment %} <a href="{% url 'users:google-login' %}">
+        Continue with Google Login
+    </a> {% endcomment %}
+    <a href="{% url 'users:naver-login' %}">
+        Continuse with Naver Login
     </a>
 </div>

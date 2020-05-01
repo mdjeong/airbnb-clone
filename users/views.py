@@ -1,4 +1,9 @@
+# Standard Libraries
 import os
+import json
+
+# Third-party Libraries
+from oauthlib.oauth2 import WebApplicationClient
 import requests
 from django.shortcuts import render, redirect, reverse
 from django.urls import reverse_lazy
@@ -6,7 +11,17 @@ from django.views import View
 from django.views.generic import FormView
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
+
+# Internal Import
 from . import forms, models
+
+NAVER_CLIENT_ID = os.environ.get("NAVER_ID", None)
+NAVER_CLIENT_SECRET = os.environ.get("NAVER_SECRET", None)
+NAVER_CLIENT = WebApplicationClient(NAVER_CLIENT_ID)
+
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_ID", None)
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_SECRET", None)
+GOOGLE_CLIENT = WebApplicationClient(GOOGLE_CLIENT_ID)
 
 
 class LoginView(View):
@@ -159,7 +174,7 @@ class KakaoException(Exception):
 
 
 def kakao_login(request):
-    app_key = os.environ.get("KAKAO_KEY")
+    app_key = os.environ.get("KAKAO_ID")
     redirect_uri = "http://127.0.0.1:8000/users/log_in/kakao/callback"
     return redirect(
         f"https://kauth.kakao.com/oauth/authorize?client_id={app_key}&redirect_uri={redirect_uri}&response_type=code"
@@ -169,7 +184,7 @@ def kakao_login(request):
 def kakao_callback(request):
     try:
         code = request.GET.get("code", None)
-        app_key = os.environ.get("KAKAO_KEY")
+        app_key = os.environ.get("KAKAO_ID")
         redirect_uri = "http://127.0.0.1:8000/users/log_in/kakao/callback"
         if code is not None:
             print(f"success to receive the code: {code}")
@@ -220,3 +235,85 @@ def kakao_callback(request):
         messages.error(request, e)
         print(e)
         return redirect(reverse("users:login"))
+
+
+class NaverException(Exception):
+    pass
+
+
+def naver_login(request):
+    authorization_endpoint = "https://nid.naver.com/oauth2.0/authorize"
+    request_uri = NAVER_CLIENT.prepare_request_uri(
+        authorization_endpoint,
+        redirect_uri="http://127.0.0.1:8000/users/log_in/naver/callback",
+        scope=["id", "name", "email", "profile_image"],
+    )
+    print(f"request_uri for code: {request_uri}")
+    return redirect(request_uri)
+
+
+def naver_callback(request):
+    try:
+        code = request.GET.get("code", None)
+        token_endpoint = "https://nid.naver.com/oauth2.0/token"
+
+        # prepare and send a request to get tokens!
+        token_url, headers, body = NAVER_CLIENT.prepare_token_request(
+            token_endpoint,
+            authorization_response=request.get_full_path(),
+            redirect_url=request.get_full_path(),
+            code=code,
+        )
+        print(f"token_url: {token_url}\nheaders: {headers}")
+        token_response = requests.post(
+            token_url,
+            headers=headers,
+            data=body,
+            auth=(NAVER_CLIENT_ID, NAVER_CLIENT_SECRET),
+        )
+        print(f"token_response: {token_response}\njson: {token_response.json()}")
+        # Parse the tokens!
+        NAVER_CLIENT.parse_request_body_response(json.dumps(token_response.json()))
+        userinfo_endpoint = "https://openapi.naver.com/v1/nid/me"
+        uri, headers, body = NAVER_CLIENT.add_token(userinfo_endpoint)
+        userinfo_response = requests.get(uri, headers=headers, data=body)
+        print(
+            f"userinfo_response: {userinfo_response}\njson: {userinfo_response.json()}"
+        )
+
+        # You want to make sure their email is verified.
+        # the user authenticated with Google, authroized your
+        # app, and now you've verified their email through Google!
+        if userinfo_response.json()["response"]["email"]:
+            users_email = userinfo_response.json()["response"]["email"]
+            picture = userinfo_response.json()["response"]["profile_image"]
+            users_name = userinfo_response.json()["response"]["name"]
+        else:
+            raise NaverException("No Data From Naver")
+
+        try:
+            user = models.User.objects.get(email=users_email)
+            if user.login_method != models.User.LOGIN_NAVER:
+                raise NaverException
+            user.avatar = picture
+            user.save()
+        except models.User.DoesNotExist:
+            user = models.User.objects.create(
+                email=users_email,
+                first_name=users_name,
+                login_method=models.User.LOGIN_NAVER,
+                email_verified=True,
+                avatar=picture,
+            )
+            user.set_unusable_password()
+            user.save()
+        # Begin user session by logging the user in
+        login(request, user)
+        return redirect(reverse("users:login"))
+    except NaverException as e:
+        messages.error(request, e)
+        print(e)
+        return redirect(reverse("users:login"))
+
+    # # Send user back to homepage
+    # return redirect(reverse("core:home"))
