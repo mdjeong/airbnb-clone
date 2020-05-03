@@ -134,8 +134,17 @@ MEDIA_URL = "/media/"  # django app상의 url 주소가 된다.
 
 
 # Email Configurations
-EMAIL_HOST = "smtp.mailgun.org"
-EMAIL_POST = "587"
-EMAIL_HOST_USER = os.environ.get("MAILGUN_USER")
-EMAIL_HOST_PASSWORD = os.environ.get("MAILGUN_PWD")
-EMAIL_FROM = "noreply@sandbox9f3dccb8ae014d3795ba37b48b629481.mailgun.org"
+# EMAIL_HOST = "smtp.mailgun.org"
+# EMAIL_POST = "587"
+# EMAIL_HOST_USER = os.environ.get("MAILGUN_USER")
+# EMAIL_HOST_PASSWORD = os.environ.get("MAILGUN_PWD")
+# EMAIL_FROM = "noreply@sandbox9f3dccb8ae014d3795ba37b48b629481.mailgun.org"
+
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_USE_TLS = True
+EMAIL_PORT = "587"
+EMAIL_HOST_USER = os.environ.get("GMAIL_ID")
+EMAIL_HOST_PASSWORD = os.environ.get("GMAIL_PWD")
+EMAIL_FROM = os.environ.get("GMAIL_ID")
