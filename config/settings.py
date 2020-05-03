@@ -38,7 +38,11 @@ DJANGO_APPS = [
     "django.contrib.staticfiles",
 ]
 
-THIRD_PARTY_APPS = ["django_countries", "django_seed"]
+THIRD_PARTY_APPS = [
+    "django_countries",
+    "django_seed",
+    #"sslserver",
+]
 
 PROJECT_APPS = [
     "core.apps.CoreConfig",
@@ -139,3 +143,9 @@ EMAIL_POST = "587"
 EMAIL_HOST_USER = os.environ.get("MAILGUN_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("MAILGUN_PWD")
 EMAIL_FROM = "noreply@sandbox9f3dccb8ae014d3795ba37b48b629481.mailgun.org"
+
+
+# ssl setting
+  #  SECURE_SSL_REDIRECT = True
+  #  SESSION_COOKIE_SECURE = True
+  #  CSRF_COOKIE_SECURE = True
