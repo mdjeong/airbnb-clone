@@ -11,6 +11,7 @@ from django.views import View
 from django.views.generic import FormView
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
+from django.core.files.base import ContentFile
 
 # Internal Import
 from . import forms, models
@@ -176,8 +177,9 @@ class KakaoException(Exception):
 def kakao_login(request):
     app_key = os.environ.get("KAKAO_ID")
     redirect_uri = "http://127.0.0.1:8000/users/log_in/kakao/callback"
+    required_properties = "account_email"
     return redirect(
-        f"https://kauth.kakao.com/oauth/authorize?client_id={app_key}&redirect_uri={redirect_uri}&response_type=code"
+        f"https://kauth.kakao.com/oauth/authorize?client_id={app_key}&redirect_uri={redirect_uri}&response_type=code&scope={required_properties}"
     )
 
 
@@ -194,28 +196,36 @@ def kakao_callback(request):
             token_json = token_request.json()
             error = token_json.get("error", None)
             if error is not None:
+                print(f"error: {error}")
                 raise KakaoException("Can't Get access token from kakao")
 
             access_token = token_json.get("access_token")
             print(f"success to receive the access token: {access_token}")
             profile_request = requests.get(
-                f"https://kapi.kakao.com/v2/user/me?",
+                "https://kapi.kakao.com/v2/user/me",
                 headers={"Authorization": f"Bearer {access_token}"},
             )
-            profile_json = profile_request.json()
+            profile_json = profile_request.json()  # dict임!
             print(profile_json)
-            email = profile_json.get("kakako_account.email")
+            email = profile_json["kakao_account"]["email"]
+            print(f"email: {email}")
             if email is None:
-                raise KakaoException()
+                raise KakaoException("email for kakao login is invalid")
             properties = profile_json.get("properties")
+            print(f"properties: {properties}")
             nickname = properties.get("nickname")
+            print(f"nickname: {nickname}")
             profile_image = properties.get("profile_image")
+            print(f"profile_image: {profile_image}")
             try:
                 user = models.User.objects.get(email=email)
                 if user.login_method != models.User.LOGIN_KAKAO:
-                    raise KakaoException
+                    raise KakaoException(
+                        f"known but try again with {user.login_method}"
+                    )
                 user.avatar = profile_image
                 user.save()
+                print(f"{email} user is known")
             except models.User.DoesNotExist:
                 user = models.User.objects.create(
                     email=email,
@@ -226,6 +236,12 @@ def kakao_callback(request):
                 )
                 user.set_unusable_password()
                 user.save()
+                print(f"{email} user is a newbie and saved!!")
+                if profile_image is not None:
+                    photo_request = requests.get(profile_image)
+                    photo = ContentFile(photo_request.content)
+                    user.avatar.save(f"{nickname}-avatar", photo)
+                    print(f"cotent file: {photo}")
             login(request, user)
 
         else:

@@ -28,7 +28,7 @@ class User(AbstractUser):
     LOGIN_KAKAO = "kakao"
     LOGIN_CHOICES = (
         (LOGIN_EMAIL, "Email"),
-        (LOGIN_EMAIL, "Github"),
+        (LOGIN_GITHUB, "Github"),
         (LOGIN_KAKAO, "Kakao"),
     )
 
