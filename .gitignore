@@ -68,6 +68,9 @@ uploads/
 instance/
 .webassets-cache
 
+# NPM Stuff
+node_modules/
+
 # Scrapy stuff:
 .scrapy
 
