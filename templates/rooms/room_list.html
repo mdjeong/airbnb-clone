@@ -1,31 +1,26 @@
-{% extends "base.html" %}
-
-{% block page_title %}
-    Home
-{% endblock page_title %}
-
+{% extends "base.html" %} {% block page_title %} Home {% endblock page_title %}
 {% block content %}
-    {% for room in object_list %}
-        <h2>
-            <a href ="{% url 'rooms:detail' room.pk %}">
-            {{room.name}} / ${{room.price}}
-            </a>
-        </h2>
+<div class="container mx-auto">
+  <div
+    class="rounded-xl bg-gray-800 h-50vh mt-32 -mx-20 mb-24 bg-cover bg-center"
+    style="
+      background-image: url(https://images.unsplash.com/photo-1507763102596-0c5b7bee5cf8?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1900&q=80);
+    "
+  ></div>
+  <div class="flex flex-wrap -mx-20">
+    {% for room in object_list %} 
+        {% include 'partials/room_card.html' with room=room %}
     {% endfor %}
-    <h4>
+  </div>
+  <h5>
     {% if page_obj.has_previous %}
-        <a href="?page=1">&laquo; first</a>
-        <a href="?page={{page_obj.previous_page_number}}">Previous</a>
+    <a href="?page=1">&laquo; first</a>
+    <a href="?page={{page_obj.previous_page_number}}">Previous</a>
+    {% endif %} Page {{page_obj.number}} of {{page_obj.paginator.num_pages}}
+    {%if page_obj.has_next %}
+    <a href="?page={{page_obj.next_page_number}}">Next</a>
+    <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
     {% endif %}
-        Page {{page_obj.number}} of {{page_obj.paginator.num_pages}}
-    {% if  page_obj.has_next %}
-        <a href="?page={{page_obj.next_page_number}}">Next</a>
-        <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
-    {% endif %}
-    </h4>
-
-    {% for page in page_obj.paginator.page_range %}
-        <a href="?page={{page}}">{{page}}</a>
-    {% endfor %}
-    
+  </h5>
+</div>
 {% endblock content %}

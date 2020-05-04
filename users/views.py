@@ -10,6 +10,7 @@ from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import FormView
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.core.files.base import ContentFile
 
@@ -61,7 +62,7 @@ class LoginFormView(FormView):
 
 class SignUpView(FormView):
     template_name = "users/signup.html"
-    form_class = forms.SignUpModelForm
+    form_class = UserCreationForm
     success_url = reverse_lazy("core:home")
     initial = {
         "first_name": "hyunjin",
@@ -279,6 +280,7 @@ def naver_callback(request):
             authorization_response=request.get_full_path(),
             redirect_url=request.get_full_path(),
             code=code,
+            client_secret=NAVER_CLIENT_SECRET,
         )
         print(f"token_url: {token_url}\nheaders: {headers}")
         token_response = requests.post(
